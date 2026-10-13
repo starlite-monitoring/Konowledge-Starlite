@@ -153,7 +153,7 @@ if(/starliteindonesia|pmosurge/.test(u))return["Aplikasi Starlite","SL","Aplikas
 return["Link Lainnya","↗","Link","#64748b"]}
 var CSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vTrkSyFdRa1v5SVp75XDdlozyiSAbTASfYGKw56iqQSx4BlcBgD5KspYRoxG7Q16-fVdAZ6xe0eKsKb/pub?gid=9435802&single=true&output=csv";
 // Tempel URL Apps Script di sini agar link tambahan terlihat di semua perangkat (lihat apps-script.gs)
-var API="";
+var API="https://script.google.com/macros/s/AKfycbxDcKZiNFinYR0JNuaXDT3lhbl6T1L7fmIIETJwkQshmSqnCZ_v6LnY4DmE8uDVR9c/exec";
 var db=null,canW=true,local=!API,store={},q="",edit=null,out=$("out"),sheetRows=[];
 try{store=JSON.parse(localStorage.getItem("ksl_links")||"{}")}catch(e){store={}}
 function nt(t){return t.toLowerCase().replace(/[^a-z0-9]+/g,"")}
