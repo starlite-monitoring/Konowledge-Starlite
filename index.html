@@ -70,6 +70,23 @@ footer{margin-bottom:84px}
 dialog{max-height:90vh;overflow:auto}
 dialog input,#q{font-size:16px}
 }
+dialog textarea{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;font-size:15px;outline:none;resize:vertical}
+dialog textarea:focus{border-color:var(--ac)}
+.ds{color:var(--mu);font-size:12.5px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media (max-width:640px){dialog textarea{font-size:16px}}
+dialog select{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:15px;outline:none}
+dialog select:focus{border-color:var(--ac)}
+.w .c{border-left:4px solid var(--cc,var(--bd))}
+.cb{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:var(--cc);background:color-mix(in srgb,var(--cc) 15%,transparent)}
+#lg{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 0;font-size:12.5px;color:var(--mu)}
+#lg i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--cc);margin-right:5px}
+@media (max-width:640px){dialog select{font-size:16px}}
+.md{display:flex;gap:6px;margin:8px 0 0}
+.md button{border:1px solid var(--bd);background:transparent;color:var(--mu);border-radius:8px;padding:5px 11px;font-size:12.5px;cursor:pointer}
+.md button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+h2.cg{color:var(--cc)}
+h2.cg:before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--cc);margin-right:8px}
+.bt{position:sticky;bottom:-20px;background:var(--card);padding-top:12px}
 </style>
 </head>
 <body>
@@ -88,6 +105,8 @@ dialog input,#q{font-size:16px}
 <h3 id="dh">Tambah Link</h3>
 <label for="ft">Judul File</label><input id="ft" type="text" placeholder="mis. Tracker Inner City" autocomplete="off">
 <label for="fu">Link</label><input id="fu" type="url" placeholder="https://…" autocomplete="off">
+<label for="fc">Kategori</label><select id="fc"></select>
+<label for="fd">Deskripsi <span style="opacity:.7">(opsional, boleh dikosongkan)</span></label><textarea id="fd" rows="2" placeholder="Boleh dikosongkan"></textarea>
 <div id="ty"></div><div id="er"></div>
 <div class="bt"><button id="dl" class="dn" hidden>Hapus</button><span class="sp"></span><button id="cn">Batal</button><button id="sv" class="pri">Simpan</button></div>
 </dialog>
@@ -126,6 +145,11 @@ var BASE=DATA;
 function $(i){return document.getElementById(i)}
 function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80)||"x"}
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
+var CATS=[["Sales","#e8590c"],["Finance","#2f9e44"],["Project","#7048e8"],["Vendor Management","#1c7ed6"],["Aplikasi Starlite","#d6336c"],["Penyimpanan","#0c8599"],["Lainnya","#868e96"]];
+function defCat(u){u=u||"";if(/starliteindonesia|pmosurge/.test(u))return"Aplikasi Starlite";if(/drive\.google|onedrive/.test(u))return"Penyimpanan";return""}
+function cc(n){for(var i=0;i<CATS.length;i++)if(CATS[i][0]==n)return CATS[i][1];return""}
+function oi(g){var i=ORDER.indexOf(g);return i<0?99:i}
+function ci(n){for(var i=0;i<CATS.length;i++)if(CATS[i][0]==n)return i;return CATS.length}
 var ORDER=["Spreadsheet","Metabase","Dashboard GitHub Pages","Looker Studio","Power BI","Dokumen","Presentasi","Form","PDF","Drive & Folder","Aplikasi Starlite","Email","Link Lainnya"];
 // [grup, kode, jenis, warna]
 function info(t,u){var x=(t||"")+" "+(u||"");
@@ -170,38 +194,41 @@ title=title.replace(/^[^\p{L}\p{N}]+/u,"");if(!title){try{title=new URL(c[ui]).h
 o.push({t:title,u:c[ui]})});return o}
 function lsave(){try{localStorage.setItem("ksl_links",JSON.stringify(store));render();return Promise.resolve()}catch(e){return Promise.reject(e)}}
 function post(o){return fetch(API,{method:"POST",body:JSON.stringify(o)}).then(function(r){return r.json()}).then(function(j){if(!j||!j.ok)throw new Error(j&&j.error||"gagal");return j})}
-function pull(){fetch(API+(API.indexOf("?")<0?"?":"&")+"t="+Date.now()).then(function(r){return r.json()}).then(function(j){var m={};(j.rows||[]).forEach(function(x){if(x.id)m[x.id]={kind:x.kind,title:x.title,url:x.url,ts:Number(x.ts)||0}});store=m;render()}).catch(function(){})}
+function pull(){fetch(API+(API.indexOf("?")<0?"?":"&")+"t="+Date.now()).then(function(r){return r.json()}).then(function(j){var m={};(j.rows||[]).forEach(function(x){if(x.id)m[x.id]={kind:x.kind,title:x.title,url:x.url,desc:x.desc||"",cat:x.cat||"",ts:Number(x.ts)||0}});store=m;render()}).catch(function(){})}
 function put(id,d){if(API)return post({op:"set",id:id,data:d}).then(function(){store[id]=d;render()});if(!local)return db.collection("links").doc(id).set(d);store[id]=d;return lsave()}
 function rm(id){if(API)return post({op:"del",id:id}).then(function(){delete store[id];render()});if(!local)return db.collection("links").doc(id).delete();delete store[id];return lsave()}
 function items(){var r=[],have={},haveU={};
-BASE.forEach(function(d){var id="o_"+slug(d[0]),o=store[id];r.push({t:d[0],u:(o&&o.url)||d[1],id:id,base:1})});
-Object.keys(store).filter(function(k){return store[k].kind=="add"}).sort(function(a,b){return(store[a].ts||0)-(store[b].ts||0)}).forEach(function(k){r.push({t:store[k].title,u:store[k].url,id:k,base:0})});
+BASE.forEach(function(d){var id="o_"+slug(d[0]),o=store[id],h=!!(o&&o.kind=="hide");r.push({t:(o&&!h&&o.title)||d[0],u:(o&&!h&&o.url)||d[1],id:id,base:1,hidden:h,ds:(o&&!h&&o.desc!==undefined?o.desc:(d[2]||"")),cat:(o&&!h&&o.cat!==undefined?o.cat:(d[3]||""))})});
+Object.keys(store).filter(function(k){return store[k].kind=="add"}).sort(function(a,b){return(store[a].ts||0)-(store[b].ts||0)}).forEach(function(k){r.push({t:store[k].title,u:store[k].url,id:k,base:0,ds:store[k].desc||"",cat:store[k].cat||""})});
 r.forEach(function(d){have[nt(d.t)]=d;if(d.u)haveU[nu(d.u)]=d});
 sheetRows.forEach(function(x){var d=haveU[nu(x.u)]||have[nt(x.t)];
-if(d){if(!d.u){d.u=x.u;haveU[nu(x.u)]=d}}else{d={t:x.t,u:x.u,id:"s_"+slug(x.t),base:0,sheet:1};r.push(d);have[nt(d.t)]=d;haveU[nu(d.u)]=d}});
-return r}
-function render(){var all=items().filter(function(d){return d.t.toLowerCase().indexOf(q)>-1}),names=ORDER.slice(),h="",t=0;
-all.forEach(function(d){var g=info(d.t,d.u)[0];if(names.indexOf(g)<0)names.push(g)});
-names.forEach(function(gn){var it=all.filter(function(d){return info(d.t,d.u)[0]==gn});if(!it.length)return;t+=it.length;
-h+='<h2>'+gn+' <span>'+it.length+'</span></h2><div class="g">';
-it.forEach(function(d){var b=info(d.t,d.u),inner='<div class="m" style="--k:'+b[3]+'">'+b[1]+'</div><div class="b"><div class="t">'+esc(d.t)+'</div><div class="d'+(d.u?'':' nl')+'">'+(d.u?b[2]:(canW?'Link belum diisi · klik untuk mengisi':'Link belum diisi'))+'</div></div>';
-h+='<div class="w">'+(d.u?'<a class="c'+(canW&&!d.sheet?' ew':'')+'" href="'+esc(d.u)+'" target="_blank" rel="noopener noreferrer">'+inner+'</a>'+(canW&&!d.sheet?'<button class="ed" data-id="'+esc(d.id)+'" title="Ubah link" aria-label="Ubah link">✎</button>':''):'<button type="button" class="c" data-id="'+esc(d.id)+'"'+(canW?'':' disabled')+'>'+inner+'</button>')+'</div>'});
+if(d){if(!d.u){d.u=x.u;haveU[nu(x.u)]=d}}else{d={t:x.t,u:x.u,id:"s_"+slug(x.t),base:0,sheet:1,ds:"",cat:""};r.push(d);have[nt(d.t)]=d;haveU[nu(d.u)]=d}});
+r.forEach(function(d){if(!d.cat)d.cat=defCat(d.u)});return r}
+function render(){var all=items().filter(function(d){return !d.hidden&&(d.t+" "+d.ds+" "+d.cat).toLowerCase().indexOf(q)>-1}),names=ORDER.slice(),h="",t=0,byCat=true,key=function(d){return byCat?(d.cat&&cc(d.cat)?d.cat:"Belum dikategorikan"):info(d.t,d.u)[0]};
+if(byCat)names=CATS.map(function(c){return c[0]}).concat(["Belum dikategorikan"]);
+else all.forEach(function(d){var g=info(d.t,d.u)[0];if(names.indexOf(g)<0)names.push(g)});
+names.forEach(function(gn){var it=all.filter(function(d){return key(d)==gn}).map(function(d,i){d.i=i;return d}).sort(function(a,b){return byCat?(oi(info(a.t,a.u)[0])-oi(info(b.t,b.u)[0])||a.i-b.i):(ci(a.cat)-ci(b.cat)||a.i-b.i)});if(!it.length)return;t+=it.length;
+h+='<h2'+(byCat&&cc(gn)?' class="cg" style="--cc:'+cc(gn)+'"':'')+'>'+gn+' <span>'+it.length+'</span></h2><div class="g">';
+it.forEach(function(d){var b=info(d.t,d.u),inner='<div class="m" style="--k:'+(d.cat&&cc(d.cat)?cc(d.cat):'#64748b')+'">'+b[1]+'</div><div class="b"><div class="t">'+esc(d.t)+'</div>'+(d.ds?'<div class="ds">'+esc(d.ds)+'</div>':'')+'<div class="d'+(d.u?'':' nl')+'">'+(d.u?b[2]:(canW?'Link belum diisi · klik untuk mengisi':'Link belum diisi'))+(d.cat&&!byCat?'<span class="cb" style="--cc:'+cc(d.cat)+'">'+esc(d.cat)+'</span>':'')+'</div></div>';
+h+='<div class="w"'+(d.cat?' style="--cc:'+cc(d.cat)+'"':'')+'>'+(d.u?'<a class="c'+(canW&&!d.sheet?' ew':'')+'" href="'+esc(d.u)+'" target="_blank" rel="noopener noreferrer">'+inner+'</a>'+(canW&&!d.sheet?'<button class="ed" data-id="'+esc(d.id)+'" title="Ubah link" aria-label="Ubah link">✎</button>':''):'<button type="button" class="c" data-id="'+esc(d.id)+'"'+(canW?'':' disabled')+'>'+inner+'</button>')+'</div>'});
 h+='</div>'});
 out.innerHTML=h;$("cp").hidden=!(local&&Object.keys(store).some(function(k){return store[k].kind=="add"}));$("n").textContent=t+" link";$("e").style.display=t?"none":"block"}
 function preview(){var u=$("fu").value.trim(),t=$("ft").value.trim();$("ty").textContent=u?"Jenis file: "+info(t,u)[2]+" → kelompok "+info(t,u)[0]:""}
 function openD(id){edit=null;var d=null;if(id)items().forEach(function(x){if(x.id==id)d=x});edit=d;
 $("dh").textContent=d?(d.u?"Ubah Link":"Isi Link"):"Tambah Link";
-$("ft").value=d?d.t:"";$("ft").readOnly=!!(d&&d.base);$("fu").value=d?d.u:"";$("er").textContent="";$("dl").hidden=!(d&&!d.base);preview();
-$("dlg").showModal();(d&&d.base?$("fu"):$("ft")).focus()}
+$("ft").value=d?d.t:"";$("ft").readOnly=false;$("fu").value=d?d.u:"";$("fd").value=d?d.ds:"";$("fc").value=d?d.cat:"";$("er").textContent="";$("dl").hidden=!d;preview();
+$("dlg").showModal();$("ft").focus()}
 function err(m){$("er").textContent=m}
-function save(){var t=$("ft").value.trim(),u=$("fu").value.trim();
+function save(){var t=$("ft").value.trim(),u=$("fu").value.trim(),ds=$("fd").value.trim(),ct=$("fc").value;
 if(!t)return err("Judul file wajib diisi.");
 if(!/^https?:\/\/\S+$/i.test(u))return err("Link harus diawali http:// atau https://");
 var id=edit?edit.id:"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-data=edit&&edit.base?{kind:"ovr",title:t,url:u,ts:Date.now()}:{kind:"add",title:t,url:u,ts:(edit&&store[id]&&store[id].ts)||Date.now()};
+data=edit&&edit.base?{kind:"ovr",title:t,url:u,desc:ds,cat:ct,ts:Date.now()}:{kind:"add",title:t,url:u,desc:ds,cat:ct,ts:(edit&&store[id]&&store[id].ts)||Date.now()};
 $("sv").disabled=true;err("");
 put(id,data).then(function(){$("dlg").close()}).catch(function(e){err("Gagal menyimpan"+(e&&e.message?": "+e.message:"."))}).then(function(){$("sv").disabled=false})}
-function del(){if(!edit||edit.base)return;rm(edit.id).then(function(){$("dlg").close()}).catch(function(){err("Gagal menghapus.")})}
+function del(){if(!edit)return;if(!confirm('Hapus "'+edit.t+'" dari daftar?'))return;
+var p=edit.base?put(edit.id,{kind:"hide",title:edit.t,url:edit.u||"",ts:Date.now()}):rm(edit.id);
+p.then(function(){$("dlg").close()}).catch(function(){err("Gagal menghapus.")})}
 out.addEventListener("click",function(e){var b=e.target.closest("button[data-id]");if(b&&canW)openD(b.dataset.id)});
 $("add").addEventListener("click",function(){openD(null)});
 $("sv").addEventListener("click",save);$("dl").addEventListener("click",del);$("cn").addEventListener("click",function(){$("dlg").close()});
@@ -209,7 +236,8 @@ $("fu").addEventListener("input",preview);$("ft").addEventListener("input",previ
 $("fu").addEventListener("keydown",function(e){if(e.key=="Enter")save()});
 $("q").addEventListener("input",function(e){q=e.target.value.trim().toLowerCase();render()});
 $("th").addEventListener("click",function(){var r=document.documentElement,d=r.dataset.theme?r.dataset.theme=="dark":matchMedia("(prefers-color-scheme:dark)").matches;r.dataset.theme=d?"light":"dark"});
-$("cp").addEventListener("click",function(){var t=Object.keys(store).filter(function(k){return store[k].kind=="add"}).map(function(k){return'["'+store[k].title.replace(/"/g,'\\"')+'","'+store[k].url+'"],'}).join("\n");
+$("fc").innerHTML='<option value="">(belum dipilih)</option>'+CATS.map(function(c){return'<option>'+c[0]+'</option>'}).join("");
+$("cp").addEventListener("click",function(){var t=Object.keys(store).filter(function(k){return store[k].kind=="add"}).map(function(k){return'["'+store[k].title.replace(/"/g,'\\"')+'","'+store[k].url+'"'+(store[k].desc?',"'+store[k].desc.replace(/"/g,'\\"')+'"':'')+(store[k].cat?(store[k].desc?'':',""')+',"'+store[k].cat+'"':'')+'],'}).join("\n");
 (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){$("cp").textContent="Tersalin ✓"}).catch(function(){prompt("Salin teks ini:",t)})});
 render();
 if(API){store={};render();pull();setInterval(pull,60000)}
